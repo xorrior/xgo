@@ -7,7 +7,7 @@
 set -e
 
 # Skip the download if no operands specified
-if [ "$1" == "" -o "$2" == "" ]; then
+if [ "$1" == "" ]; then
   echo "Fetch operands missing, skipping..."
   exit
 fi
@@ -18,10 +18,4 @@ echo "Downloading $1..."
 wget -q $1
 
 # Generate a desired checksum report and check against it
-echo "$2  $file" > $file.sum
-if [ "${#2}" == "40" ]; then
-  sha1sum -c $file.sum
-else
-  sha256sum -c $file.sum
-fi
-rm $file.sum
+

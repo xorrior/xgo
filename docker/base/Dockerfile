@@ -3,9 +3,7 @@
 #
 # Released under the MIT license.
 
-FROM ubuntu:16.10
-
-MAINTAINER Péter Szilágyi <peterke@gmail.com>
+FROM ubuntu:18.04
 
 # Mark the image as xgo enabled to support xgo-in-xgo
 ENV XGO_IN_XGO 1
@@ -33,7 +31,7 @@ RUN \
     gcc-5-mipsel-linux-gnu g++-5-mipsel-linux-gnu libc6-dev-mipsel-cross                 \
     gcc-5-mips64-linux-gnuabi64 g++-5-mips64-linux-gnuabi64 libc6-dev-mips64-cross       \
     gcc-5-mips64el-linux-gnuabi64 g++-5-mips64el-linux-gnuabi64 libc6-dev-mips64el-cross \
-    gcc-5-multilib g++-5-multilib clang llvm-dev             \
+    gcc-5-multilib g++-5-multilib gcc-mingw-w64 g++-mingw-w64 clang cmake llvm-dev python3.6 wget           \
     libtool libxml2-dev uuid-dev libssl-dev swig openjdk-8-jdk pkg-config patch          \
     make xz-utils cpio wget zip unzip p7zip git mercurial bzr texinfo help2man           \
     --no-install-recommends
@@ -44,19 +42,15 @@ RUN ln -s /usr/include/asm-generic /usr/include/asm
 # Configure the container for OSX cross compilation
 ENV OSX_SDK     MacOSX10.15.sdk
 ENV OSX_NDK_X86 /usr/local/osx-ndk-x86
+ENV OSX_SDK_PATH=https://github.com/phracker/MacOSX-SDKs/releases/download/10.15/MacOSX10.15.sdk.tar.xz
 
-RUN \
-  OSX_SDK_PATH=https://s3.dockerproject.org/darwin/v2/$OSX_SDK.tar.xz && \
-  $FETCH $OSX_SDK_PATH dd228a335194e3392f1904ce49aff1b1da26ca62       && \
-  \
-  git clone https://github.com/tpoechtrager/osxcross.git && \
-  mv `basename $OSX_SDK_PATH` /osxcross/tarballs/        && \
-  \
-  sed -i -e 's|-march=native||g' /osxcross/build_clang.sh /osxcross/wrapper/build.sh && \
-  UNATTENDED=yes OSX_VERSION_MIN=10.6 /osxcross/build.sh                             && \
-  mv /osxcross/target $OSX_NDK_X86                                                   && \
-  \
-  rm -rf /osxcross
+RUN $FETCH $OSX_SDK_PATH dd228a335194e3392f1904ce49aff1b1da26ca62
+RUN git clone https://github.com/tpoechtrager/osxcross.git
+RUN mv `basename $OSX_SDK_PATH` /osxcross/tarballs/ 
+RUN sed -i -e 's|-march=native||g' /osxcross/build_clang.sh /osxcross/build.sh
+RUN UNATTENDED=yes OSX_VERSION_MIN=10.6 /osxcross/build.sh                           
+RUN mv /osxcross/target $OSX_NDK_X86                                                 
+RUN rm -rf /osxcross
 
 ADD patch.tar.xz $OSX_NDK_X86/SDK/$OSX_SDK/usr/include/c++
 ENV PATH $OSX_NDK_X86/bin:$PATH
